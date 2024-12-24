@@ -12,13 +12,12 @@
 #  for more details.
 
 #a Global variables
-CYCLICITY = ..
+include ${CDL_MAKEFILE_CONFIG}
 PREREQS = SBi
-include ${CYCLICITY}/scripts/makefile_hdr
+include ${CDL_SCRIPTS_DIR}/makefile_hdr
 
 #a Source files
 CYC_SRCS = \
-	cyclicity_grammar.y \
 	c_type_value_pool.cpp \
 	c_cyc_object.cpp \
 	c_co_constructors.cpp \
@@ -36,76 +35,29 @@ CYC_SRCS = \
 	c_lexical_analyzer.cpp \
 	c_cyclicity.cpp
 
+SRC_DIR = .
+OBJ_DIR = ${CDL_BUILD_ROOT}/cdl_frontend
+
 #a Objects
-CYC_OBJS = $(call objs_from_srcs,${CYC_SRCS})
-
 CMD_SRCS = ${CYC_SRCS} cyclicity.cpp
-CMD_OBJS = $(call objs_from_srcs,${CMD_SRCS})
+CMD_OBJS = $(call objs_from_srcs,${OBJ_DIR},${CMD_SRCS})
+CMD_OBJS += ${OBJ_DIR}/cyclicity_grammar.o
 
-PY_SRCS = ${CYC_SRCS} py_cyclicity.cpp
-PY_OBJS = $(call objs_from_srcs,${CMD_SRCS})
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${CMD_SRCS},-I${OBJ_DIR},${OBJ_DIR}/cyclicity_grammar.h))
+$(eval $(call bison_to_h_and_o,${OBJ_DIR},${SRC_DIR},cyclicity_grammar.y))
 
-SRCS =  ${CYC_SRCS} py_cyclicity.cpp cyclicity.cpp
+CMDLINE_PROG = ${CDL_BUILD_BIN_DIR}/cdl
 
-#a Resultant 'libraries'
-CMDLINE_PROG = ${OS_DIR}/cdl
-PY_LIB = ${OS_DIR}/py_cdl.${LIB_EXT}
-ifeq ($(BUILD_PYTHON),no)
-	PY_LIB =
-endif
+clean:
+	@rm -f ${CMD_OBJS} ${CMDLINE_PROG} ${OBJ_DIR}/cyclicity_grammar.h ${OBJ_DIR}/cyclicity_grammar.cpp ${OBJ_DIR}/*.P core.*
+	mkdir -p ${OBJ_DIR}
 
-#a Dependencies and build requirements
-all: libraries ALL
-
-libraries:
-	(cd ../lib ; make)
-
-# We put in cyclicity_grammar.h here so that it is built first. Its a hack.
-ALL: cyclicity_grammar.h ${CMDLINE_PROG} ${PY_LIB}
-
-# ${BACKEND_OBJ}
-
-${BACKEND_OBJ}: ${LANGUAGE_OBJS}
-	${LINKASBIN} ${BACKEND_OBJ} ${LANGUAGE_OBJS}
-
-${CMDLINE_PROG}: $(CMD_OBJS) $(CYCLICITY_OBJS)
-	${LINKASBIN} ${CMDLINE_PROG} $(CMD_OBJS) ${CYCLICITY_OBJS} ${LD_LIBS}
-
-${PY_LIB}: $(PY_OBJS)
-	${LINKDYNLIB} ${PY_LIB} ${PY_OBJS} ${CYCLICITY_OBJS} ${LD_LIBS}
-
-
-cyclicity_grammar.h: cyclicity_grammar.y
-ifeq (${BISON_VERSION},2.5)
-	bison -v --defines=$@ cyclicity_grammar.y
-else
-	#mv ignore.me.h cyclicity_grammar.h
-	#rm -f ignore.me ignore.me.output
-	bison -v -d -o ignore.me$(BISON_TAIL) cyclicity_grammar.y
-	mv ignore.me.h cyclicity_grammar.h
-	rm -f ignore.me ignore.me.output
-endif
-
-cyclicity_grammar.o: cyclicity_grammar.cpp cyclicity_grammar.h
-
-cyclicity_grammar.cpp: cyclicity_grammar.y
-	rm -f cyclicity_grammar.cpp
-	bison --debug cyclicity_grammar.y -o cyclicity_grammar.cpp
+build: ${CMDLINE_PROG}
+$(eval $(call make_static_binary,${CMDLINE_PROG},${CMD_OBJS},${CYCLICITY_LIBS} -lc))
+$(eval $(call install_static_binary,${CDL_BUILD_BIN_DIR},cdl))
 
 #a Clean, depend, etc
-clean:
-	rm -f ${CMD_OBJS} ${PY_OBJS} ${CMDLINE_PROG} ${PY_LIB} cyclicity_grammar.h cyclicity_grammar.cpp ${OS_DIR}/*.P core.*
-
-backup:
-	tar zcvf backups/backup_`date +%y%m%d%H%M`.tgz Makefile *.y *.h *.cpp *.txt
-
-$DEPFILES := $(patsubst %.y,${OS_DIR}/%.P,$(SRCS:%.cpp=${OS_DIR}/%.P))
+$DEPFILES := $(patsubst %.y,${OBJ_DIR}/%.P,$(SRCS:%.cpp=${OBJ_DIR}/%.P))
 
 -include $DEPFILES
-
-#a Editor preferences and notes
-# Local Variables: ***
-# mode: Makefile ***
-# outline-regexp: "#[a!]\\\|#[	 ]*[b-z][	 ]" ***
-# End: ***
 
