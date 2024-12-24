@@ -45,6 +45,22 @@
 #define WHERE_I_AM(x) {}
 #endif
 
+/*a Types */
+/*t t_engine_function_list
+ */
+typedef struct t_engine_function_list
+{
+    struct t_engine_function_list *next_in_list;
+    struct t_engine_function *signal;
+    union {
+        t_se_engine_std_function       callback_void_fn;
+        t_se_engine_int_std_function   callback_int_fn;
+        t_se_engine_voidp_std_function callback_voidp_fn;
+    };
+    t_sl_timer timer; // For profiling - time spent in the callback
+    int invocation_count; // For profiling - number of times callback has been invoked
+} t_engine_function_list;
+
 /*a Signal reference function add
  */
 /*f se_engine_signal_reference_add
@@ -57,6 +73,17 @@ extern void se_engine_signal_reference_add( t_engine_signal_reference **ref_list
      efr->next_in_list = *ref_list_ptr;
      *ref_list_ptr = efr;
      efr->signal = signal;
+}
+
+/*f se_engine_signal_reference_list_clear
+ */
+extern void se_engine_signal_reference_list_clear(t_engine_signal_reference **ref_list_ptr)
+{
+    while (*ref_list_ptr) {
+        auto efr = *ref_list_ptr;
+        *ref_list_ptr = efr->next_in_list;
+        free(efr);
+    }
 }
 
 /*a Engine function external functions
