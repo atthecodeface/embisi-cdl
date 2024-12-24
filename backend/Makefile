@@ -12,9 +12,9 @@
 #  for more details.
 
 #a Global variables
-CYCLICITY = ..
+include ${CDL_MAKEFILE_CONFIG}
 PREREQS = Si
-include ${CYCLICITY}/scripts/makefile_hdr
+include ${CDL_SCRIPTS_DIR}/makefile_hdr
 
 #a Source files
 BACKEND_SRCS = \
@@ -30,31 +30,22 @@ INCLUDES = cdl_version.h be_model_includes.h
 
 SRC_DIR = .
 SRCS = ${BACKEND_SRCS}
+OBJ_DIR = ${CDL_BUILD_ROOT}/backend
 
 #a Objects
+objs_from_srcs = $(foreach SRC,${1},$(patsubst %.cpp,${OBJ_DIR}/%.o,${SRC:.y=.cpp}))
 BACKEND_OBJS = $(call objs_from_srcs,${BACKEND_SRCS})
 
 #a Resultant 'libraries'
-BACKEND_LIB = ${OS_DIR}/be_backend.o
+BACKEND_LIB = ${CDL_BUILD_OBJ_DIR}/be_backend.o
 
-#a Dependencies and build requirements
-ALL: ${BACKEND_LIB}
+$(eval $(call add_includes,${INCLUDES}))
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${BACKEND_SRCS}))
 
-${BACKEND_LIB}: ${BACKEND_OBJS}
-	${LINKASOBJ} $@ ${BACKEND_OBJS}
+build: ${BACKEND_LIB}
+$(eval $(call make_static_library,${BACKEND_LIB},${BACKEND_OBJS}))
 
-#a Clean etc
+#a Clean, dependencies and build requirements
 clean:
-	rm -f ${CMDLINE_PROG} ${BACKEND_OBJS} ${OS_DIR}/*.P core.*
-
-backup:
-	tar zcvf backups/backup_`date +%y%m%d%H%M`.tgz Makefile ${SRCS} ${HDRS} ${UIS}
-
--include $(SRCS:%.cpp=${OS_DIR}/%.P)
-
-#a Editor preferences and notes
-# Local Variables: ***
-# mode: Makefile ***
-# outline-regexp: "#[a!]\\\|#[\t ]*[b-z][\t ]" ***
-# End: ***
-
+	@rm -f ${CMDLINE_PROG} ${BACKEND_OBJS} ${OBJ_DIR}/*.P core.*
+	mkdir -p ${OBJ_DIR}
