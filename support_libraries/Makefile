@@ -1,6 +1,6 @@
 #a Copyright
 #  
-#  This file 'Makefile' copyright Gavin J Stark 2003, 2004
+#  This file 'Makefile' copyright Gavin J Stark 2003, 2004, 2020
 #  
 #  This is free software; you can redistribute it and/or modify it however you wish,
 #  with no obligations
@@ -9,10 +9,9 @@
 #  but WITHOUT ANY WARRANTY; without even implied warranty of MERCHANTABILITY
 #  or FITNESS FOR A PARTICULAR PURPOSE.
 
-#a Global variables
-CYCLICITY = ..
+include ${CDL_MAKEFILE_CONFIG}
 PREREQS = 
-include ${CYCLICITY}/scripts/makefile_hdr
+include ${CDL_SCRIPTS_DIR}/makefile_hdr
 
 #a Source files
 BASIC_LIB_SRCS := \
@@ -34,47 +33,62 @@ BASIC_LIB_SRCS := \
 		sl_pthread_barrier.cpp \
 		sl_general.cpp
 
-SRCS = ${BASIC_LIB_SRCS}
+EXTRA_LIB_SRCS := \
+	sl_exec_file.cpp \
+	sl_option.cpp
+
+
+INCLUDES = c_sl_error.h \
+            sl_ef_lib_event.h \
+            sl_exec_file.h \
+            sl_indented_file.h \
+            sl_random.h \
+            sl_cons.h \
+            sl_ef_lib_fifo.h \
+            sl_fifo.h \
+            sl_mif.h \
+            sl_timer.h \
+            sl_data_stream.h \
+            sl_ef_lib_memory.h \
+            sl_general.h \
+            sl_option.h \
+            sl_token.h \
+            sl_debug.h \
+            sl_ef_lib_random.h \
+            sl_hier_mem.h \
+            sl_pthread_barrier.h \
+            sl_work_list.h
+
+SRC_DIR = .
+SRCS    = ${BASIC_LIB_SRCS}
+OBJ_DIR = ${CDL_BUILD_ROOT}/support_libraries
 
 #a Objects
+objs_from_srcs = $(foreach SRC,${1},$(patsubst %.cpp,${OBJ_DIR}/%.o,${SRC:.y=.cpp}))
 BASIC_LIB_OBJS  := $(call objs_from_srcs,${BASIC_LIB_SRCS})
-PLAIN_LIB_OBJS  := ${BASIC_LIB_OBJS} ${OS_DIR}/sl_exec_file.o ${OS_DIR}/sl_option.o 
-PYTHON_LIB_OBJS := ${BASIC_LIB_OBJS} ${OS_DIR}/sl_exec_file_python.o ${OS_DIR}/sl_option_python.o
+PLAIN_LIB_OBJS  := ${BASIC_LIB_OBJS} ${OBJ_DIR}/sl_exec_file.o        ${OBJ_DIR}/sl_option.o 
+PYTHON_LIB_OBJS := ${BASIC_LIB_OBJS} ${OBJ_DIR}/sl_exec_file_python.o ${OBJ_DIR}/sl_option_python.o
 
-#a Resultant 'libraries'
-PLAIN_LIBRARY  := ${OS_DIR}/sl_support.o
-PYTHON_LIBRARY := ${OS_DIR}/sl_support_with_python.o
-ifeq ($(BUILD_PYTHON),no)
-PYTHON_LIBRARY :=
+#a Make include - copy relevant header files
+$(eval $(call add_includes,${INCLUDES}))
+
+#a Clean, dependencies and build requirements
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${BASIC_LIB_SRCS}))
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${EXTRA_LIB_SRCS}))
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${EXTRA_LIB_SRCS},-DSL_PYTHON ${PYTHON_INCLUDE},,_python))
+
+clean:
+	@rm -f ${PLAIN_LIBRARY} ${PYTHON_LIBRARY} ${PLAIN_LIB_OBJS} ${PLAIN_LIB_OBJS} ${PYTHON_LIB_OBJS} ${OBJ_DIR}/*.P
+	mkdir -p ${OBJ_DIR}
+
+build: ${CDL_BUILD_LIB_DIR}/${SUPPORT_PLAIN_LIBRARY}
+$(eval $(call make_static_library,${CDL_BUILD_LIB_DIR}/${SUPPORT_PLAIN_LIBRARY},${PLAIN_LIB_OBJS}))
+$(eval $(call install_static_library,${CDL_BUILD_LIB_DIR},${SUPPORT_PLAIN_LIBRARY}))
+
+ifeq ($(BUILD_PYTHON),yes)
+build: ${CDL_BUILD_LIB_DIR}/${SUPPORT_PYTHON_LIBRARY}
+$(eval $(call make_static_library,${CDL_BUILD_LIB_DIR}/${SUPPORT_PYTHON_LIBRARY},${PYTHON_LIB_OBJS}))
+$(eval $(call install_static_library,${CDL_BUILD_LIB_DIR},${SUPPORT_PYTHON_LIBRARY}))
 endif
 
-#a Dependencies and build requirements
-ALL: ${PLAIN_LIBRARY} ${PYTHON_LIBRARY}
-
-${PLAIN_LIBRARY}: ${PLAIN_LIB_OBJS}
-	${LINKASOBJ} ${PLAIN_LIBRARY} ${PLAIN_LIB_OBJS}
-
-${PYTHON_LIBRARY}: ${PYTHON_LIB_OBJS}
-	${LINKASOBJ} ${PYTHON_LIBRARY} ${PYTHON_LIB_OBJS}
-
-#a Special build objects
-${OS_DIR}/sl_exec_file_python.o: sl_exec_file.cpp
-	$(Q)$(CC) ${CXXFLAGS} -I${PYTHON_INCLUDES} -DSL_PYTHON -c sl_exec_file.cpp -o ${OS_DIR}/sl_exec_file_python.o
-${OS_DIR}/sl_option_python.o: sl_option.cpp
-	$(Q)$(CC) ${CXXFLAGS} -I${PYTHON_INCLUDES} -DSL_PYTHON -c sl_option.cpp -o ${OS_DIR}/sl_option_python.o
-
-#a Clean etc
-clean:
-	rm -f ${PLAIN_LIBRARY} ${PYTHON_LIBRARY} ${PLAIN_LIB_OBJS} ${PLAIN_LIB_OBJS} ${PYTHON_LIB_OBJS} ${OS_DIR}/*.P core.*
-
-backup:
-	tar zcvf backups/backup_`date +%y%m%d%H%M`.tgz Makefile ${SRCS} ${HDRS} ${UIS}
-
--include $(SRCS:%.cpp=${OS_DIR}/%.P)
-
-#a Editor preferences and notes
-# Local Variables: ***
-# mode: Makefile ***
-# outline-regexp: "#[a!]\\\|#[\t ]*[b-z][\t ]" ***
-# End: ***
 
