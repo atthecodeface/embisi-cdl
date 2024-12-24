@@ -19,13 +19,16 @@ include ${CYCLICITY}/scripts/makefile_hdr
 #a Source files
 BACKEND_SRCS = \
 		c_model_descriptor.cpp \
+		c_md_target.cpp \
 		md_output_markers.cpp \
 		md_target_c.cpp \
 		md_target_xml.cpp \
 		md_target_cdl_header.cpp \
 		md_target_verilog.cpp
-#		md_target_vhdl.cpp
 
+INCLUDES = cdl_version.h be_model_includes.h
+
+SRC_DIR = .
 SRCS = ${BACKEND_SRCS}
 
 #a Objects
