@@ -125,6 +125,7 @@ static t_sl_error_level internal_module_test_harness_preclock( t_internal_module
  */
 static t_sl_error_level internal_module_test_harness_clock( t_internal_module_test_harness_data *data )
 {
+    SL_DEBUG( sl_debug_level_verbose_info, "Clock test harness" );
     /*b Run the exec_file - this should do the 'tick-start, tick-end' of an exec file
      */
     WHERE_I_AM;

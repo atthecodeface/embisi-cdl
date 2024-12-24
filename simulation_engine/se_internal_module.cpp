@@ -190,6 +190,7 @@ static struct t_internal_module_data *create_internal_module_data( c_engine *eng
 {
      t_internal_module_data *data;
      data = (t_internal_module_data *)malloc(sizeof(t_internal_module_data));
+
      data->engine = engine;
      data->ptr = NULL;
      data->next_in_list = engine->module_data;
@@ -397,22 +398,17 @@ static t_sl_error_level internal_module_bundle_instantiate( c_engine *engine, vo
 
 /*f internal_module_clock_phase_reset
  */
-static t_sl_error_level internal_module_clock_phase_reset( void *handle, int pass )
+static void internal_module_clock_phase_reset(t_internal_module_data *data, int pass )
 {
-    t_internal_module_data *data;
-    data = (t_internal_module_data *)handle;
-
     data->args[2] = data->args[0]; // cycles left in delay
     data->args[3] = 0; // position in pattern
     data->outputs[0] = 0;
-    return error_level_okay;
 }
 
 /*f internal_module_clock_phase_int_preclock
  */
-static t_sl_error_level internal_module_clock_phase_int_preclock( void *handle )
+static void internal_module_clock_phase_int_preclock(t_internal_module_data *data)
 {
-    return error_level_okay;
 }
 
 /*f internal_module_clock_phase_int_clock
@@ -497,30 +493,22 @@ static t_sl_error_level internal_module_clock_phase_instantiate( c_engine *engin
 
 /*f internal_module_assign_reset
  */
-static t_sl_error_level internal_module_assign_reset( void *handle, int pass )
+static void internal_module_assign_reset(t_internal_module_data *data, int pass )
 {
-    t_internal_module_data *data;
-    data = (t_internal_module_data *)handle;
-
     data->outputs[0] = data->args[1];
-    return error_level_okay;
 }
 
 /*f internal_module_assign_reset_preclock
  */
-static t_sl_error_level internal_module_assign_reset_preclock( void *handle )
+static void internal_module_assign_reset_preclock(t_internal_module_data *data)
 {
-    return error_level_okay;
 }
 
 /*f internal_module_assign_reset_clock
  */
-static t_sl_error_level internal_module_assign_reset_clock( void *handle )
+static void internal_module_assign_reset_clock(t_internal_module_data *data)
 {
-    t_internal_module_data *data;
-    data = (t_internal_module_data *)handle;
     data->outputs[0]=data->args[3];
-    return error_level_okay;
 }
 
 /*f internal_module_data_assign_instantiate
@@ -536,6 +524,7 @@ static t_sl_error_level internal_module_data_assign_instantiate( c_engine *engin
     after_value = engine->get_option_int( engine_handle, "after_value", 32 );
 
     data = create_internal_module_data( engine );
+
     data->args[0] = bus_width;
     data->args[1] = value;
     data->args[2] = until_cycle;

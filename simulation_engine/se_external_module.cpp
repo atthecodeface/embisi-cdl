@@ -185,11 +185,10 @@ extern t_sl_error_level se_external_module_instantiate( void *handle, c_engine *
      return em->instantiation_fn( engine, instantiation_handle );
 }
 
-/*f se_external_module_deregister
-  deregister a module
-  Not yet been updated for 
+/*f deregister_all_implementations
+  deregister all implementations of a module
  */
-extern int se_external_module_deregister( const char *name )
+static void deregister_all_implementations(t_engine_module *em)
 {
      t_engine_module *em, *last_em;
 
