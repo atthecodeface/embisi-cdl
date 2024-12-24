@@ -12,10 +12,9 @@
 #  for more details.
 
 #a Global variables
-CYCLICITY = ..
+include ${CDL_MAKEFILE_CONFIG}
 PREREQS = S
-
-include ${CYCLICITY}/scripts/makefile_hdr
+include ${CDL_SCRIPTS_DIR}/makefile_hdr
 
 SPECIFIC_INCLUDES =
 ifeq ("$(BUILD_PYTHON)","yes")
@@ -45,34 +44,36 @@ ENGINE_SRCS = \
 		c_se_engine__log.cpp \
 		c_se_engine.cpp
 
+INCLUDES = se_cmodel_assist.h \
+			c_se_engine.h \
+			se_errors.h \
+			se_external_module.h
+
+ifneq ($(strip ${VERILATOR_SHARE}),)
+ENGINE_SRCS += se_wrapped_verilator.cpp
+INCLUDES    += se_wrapped_verilator.h
+endif
+
+SRC_DIR = .
 SRCS = ${ENGINE_SRCS}
+OBJ_DIR = ${CDL_BUILD_ROOT}/simulation_engine
 
 #a Objects
+objs_from_srcs = $(foreach SRC,${1},$(patsubst %.cpp,${OBJ_DIR}/%.o,${SRC:.y=.cpp}))
 ENGINE_OBJS = $(call objs_from_srcs,${ENGINE_SRCS})
 
+#a Make include - copy relevant header files
+$(eval $(call add_includes,${INCLUDES}))
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${ENGINE_SRCS},-I ${VERILATOR_SHARE}/include))
+
 #a Resultant 'libraries'
-SE_LIB = ${OS_DIR}/se_simulation_engine.o
-LIBRARIES = ${SE_LIB}
-
-#a Dependencies and build requirements
-ALL: ${LIBRARIES}
-
-${SE_LIB}: ${ENGINE_OBJS}
-	${LINKASOBJ} $@ ${ENGINE_OBJS}
-	#	${LINKDYNLIB} $@ ${ENGINE_OBJS} ${SUPPORT_WITH_PYTHON_OBJECTS}
+# This library is not installed, as it has to be combined with an execution harness
+build: ${CDL_BUILD_LIB_DIR}/${SIMULATION_LIBRARY}
+$(eval $(call make_static_library,${CDL_BUILD_LIB_DIR}/${SIMULATION_LIBRARY},${ENGINE_OBJS}))
 
 #a Clean, depend, etc
 clean:
-	rm -f ${LIBRARIES} ${CMDLINE_OBJS} ${PYTHON_OBJS} ${ENGINE_OBJS} ${OS_DIR}/*.P core.*
+	@rm -f ${LIBRARIES} ${CMDLINE_OBJS} ${PYTHON_OBJS} ${ENGINE_OBJS} ${OBJ_DIR}/*.P core.*
+	mkdir -p ${OBJ_DIR}
 
-backup:
-	tar zcvf backups/backup_`date +%y%m%d%H%M`.tgz Makefile ${SRCS}
-
--include $(SRCS:%.cpp=${OS_DIR}/%.P)
-
-#a Editor preferences and notes
-# Local Variables: ***
-# mode: Makefile ***
-# outline-regexp: "#[a!]\\\|#[\t ]*[b-z][\t ]" ***
-# End: ***
 
