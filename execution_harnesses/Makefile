@@ -10,20 +10,25 @@
 #  or FITNESS FOR A PARTICULAR PURPOSE.
 
 #a Global variables
-CYCLICITY = ..
-PREREQS = sei
-include ${CYCLICITY}/scripts/makefile_hdr
+include ${CDL_MAKEFILE_CONFIG}
+PREREQS = seib
+include ${CDL_SCRIPTS_DIR}/makefile_hdr
 
 #a Source files
+OBJ_DIR = ${CDL_BUILD_ROOT}/execution_harnesses
+SRC_DIR = .
 CMDLINE_SRCS = \
 		eh_scripting_none.cpp \
 		eh_batch_mode.cpp
 
 PYTHON_SRCS = \
 	eh_scripting_python.cpp \
-	eh_py_engine.cpp
+	eh_py_engine.c \
+	eh_c_py_engine.cpp
 
 VPI_SRCS = eh_vpi.cpp
+
+INCLUDES = eh_scripting.h
 
 SRCS := ${CMDLINE_SRCS}
 ifneq ($(BUILD_PYTHON),no)
@@ -34,55 +39,39 @@ SRCS := ${SRCS} ${VPI_SRCS}
 endif
 
 #a Objects
-CMDLINE_OBJS = $(call objs_from_srcs,${CMDLINE_SRCS})
-PYTHON_OBJS = $(call objs_from_srcs,${PYTHON_SRCS})
-VPI_OBJS = $(call objs_from_srcs,${VPI_SRCS})
+CMDLINE_OBJS = $(call objs_from_srcs,${OBJ_DIR},${CMDLINE_SRCS})
+PYTHON_OBJS  = $(call objs_from_srcs,${OBJ_DIR},${PYTHON_SRCS})
+VPI_OBJS     = $(call objs_from_srcs,${OBJ_DIR},${VPI_SRCS})
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${CMDLINE_SRCS},))
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${PYTHON_SRCS},-DSL_PYTHON -I${PYTHON_INCLUDES}))
+$(eval $(call compile_cpps,${OBJ_DIR},${SRC_DIR},${VPI_SRCS},-I${VPI_INCLUDES}))
+
+#a Make include - copy relevant header files
+$(eval $(call add_includes,${INCLUDES}))
 
 #a Resultant 'libraries'
-CMDLINE_LIB := ${OS_DIR}/eh_batch_scripting_harness.o
-PYTHON_LIB := ${OS_DIR}/eh_python_scripting_harness.o
-VPI_LIB := ${OS_DIR}/eh_vpi_harness.o
-ifeq ($(BUILD_PYTHON),no)
-	PYTHON_LIB =
-endif
-ifeq ($(BUILD_VPI),no)
-	VPI_LIB =
-endif
+build: ${CDL_BUILD_LIB_DIR}/${SIMULATION_LIBRARY_BATCH}
+$(eval $(call make_static_library,${CDL_BUILD_LIB_DIR}/${SIMULATION_LIBRARY_BATCH},${CMDLINE_OBJS},cdl_se_no_harness cdl_sl))
+$(eval $(call install_static_library,${CDL_BUILD_LIB_DIR},${SIMULATION_LIBRARY_BATCH}))
 
-LIBRARIES = ${PYTHON_LIB} ${CMDLINE_LIB} ${VPI_LIB}
-
-#a Dependencies and build requirements
-ALL: ${LIBRARIES}
-
-SPECIFIC_INCLUDES := 
-ifneq ($(BUILD_PYTHON),no)
-SPECIFIC_INCLUDES := ${SPECIFIC_INCLUDES} -DSL_PYTHON -I${PYTHON_INCLUDES}
-endif
-ifneq ($(BUILD_VPI),no)
-SPECIFIC_INCLUDES := ${SPECIFIC_INCLUDES} -I${VPI_INCLUDES}
+ifeq ($(BUILD_PYTHON),yes)
+build: ${CDL_BUILD_LIB_DIR}/${SIMULATION_LIBRARY_PYTHON}
+$(eval $(call make_static_library,${CDL_BUILD_LIB_DIR}/${SIMULATION_LIBRARY_PYTHON},${PYTHON_OBJS},cdl_se_no_harness cdl_sl_python))
+$(eval $(call install_static_library,${CDL_BUILD_LIB_DIR},${SIMULATION_LIBRARY_PYTHON}))
 endif
 
-${CMDLINE_LIB}: $(CMDLINE_OBJS)
-	${LINKASOBJ} $@ $(CMDLINE_OBJS)
-
-${PYTHON_LIB}: $(PYTHON_OBJS)
-	${LINKASOBJ} $@ ${PYTHON_OBJS}
-
+ifeq ($(BUILD_VPI),yes)
+build: ${VPI_LIB}
 ${VPI_LIB}: $(VPI_OBJS)
 	${LINKASOBJ} $@ ${VPI_OBJS}
+endif
+
+#a Clean, dependencies and build requirements
+clean:
+	@rm -f ${LIBRARIES} ${CMDLINE_OBJS} ${PYTHON_OBJS} ${VPI_OBJS} ${OBJ_DIR}/*.P core.*
+	mkdir -p ${OBJ_DIR}
 
 #a Clean etc
-clean:
-	rm -f ${LIBRARIES} ${CMDLINE_OBJS} ${PYTHON_OBJS} ${VPI_OBJS} ${OS_DIR}/*.P core.*
 
-backup:
-	tar zcvf backups/backup_`date +%y%m%d%H%M`.tgz Makefile ${SRCS}
 
--include $(SRCS:%.cpp=${OS_DIR}/%.P)
-
-#a Editor preferences and notes
-# Local Variables: ***
-# mode: Makefile ***
-# outline-regexp: "#[a!]\\\|#[\t ]*[b-z][\t ]" ***
-# End: ***
 
