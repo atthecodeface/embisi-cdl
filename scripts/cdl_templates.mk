@@ -35,16 +35,20 @@ $(eval $(call timestamp,all_obj))
 $(eval $(call timestamp,all_cpp))
 
 ifneq (${VERILATOR_SHARE},)
-MODEL_VERILATOR_OBJS = ${BUILD_ROOT}/verilated.o
+MODEL_VERILATOR_OBJS = ${BUILD_ROOT}/verilated.o ${BUILD_ROOT}/verilated_threads.o
 endif
 
 clean: clean_verilate
 
 clean_verilate:
-	rm -rf ${BUILD_ROOT}/verilated.o
+	rm -rf ${BUILD_ROOT}/verilated.o ${BUILD_ROOT}/verilated_threads.o
 
 ${BUILD_ROOT}/verilated.o:  ${VERILATOR_SHARE}/include/verilated.cpp
-	${Q}${CXX} -c ${VERILATOR_C_FLAGS} ${VERILATOR_SHARE}/include/verilated.cpp -o $$@  -I ${VERILATOR_SHARE}/include -I. $${VERILATOR_LIBS}
+	${Q}${CXX} -c ${VERILATOR_C_FLAGS} ${VERILATOR_SHARE}/include/verilated.cpp ${VERILATOR_SHARE}/include/verilated_threads.cpp -o $$@  -I ${VERILATOR_SHARE}/include -I. $${VERILATOR_LIBS}
+
+${BUILD_ROOT}/verilated_threads.o:  ${VERILATOR_SHARE}/include/verilated_threads.cpp
+	${Q}${CXX} -c ${VERILATOR_C_FLAGS} ${VERILATOR_SHARE}/include/verilated_threads.cpp -o $$@  -I ${VERILATOR_SHARE}/include -I. $${VERILATOR_LIBS}
+
 
 endef
 
@@ -440,7 +444,9 @@ all: $1
 # MODEL_VERILATOR_OBJS = ${BUILD_ROOT}/bbc/verilate/verilated.o
 $1: ${MODEL_LIBS} ${MODEL_VERILATOR_OBJS} ${MODEL_VERILATOR_LIBS} $3
 	@echo "Building python library"
-	${Q}${MAKE_DYNAMIC_LIBRARY} $$@ $3 ${MODEL_LIBS} ${MODEL_VERILATOR_LIBS} ${MODEL_VERILATOR_OBJS} -L${CDL_ROOT}/lib -lcdl_se_python ${PYTHON_LIBS} -lc++ -lc ${LDFLAGS}
+	#${Q}${MAKE_DYNAMIC_LIBRARY} $$@ $3 ${MODEL_LIBS} ${MODEL_VERILATOR_LIBS} ${MODEL_VERILATOR_OBJS} -L${CDL_ROOT}/lib -lcdl_se_python ${PYTHON_LIBS} -lc++ -lc ${LDFLAGS}
+	## Gavin hack
+	${Q}c++ -bundle -o $$@ $3 ${MODEL_LIBS} ${MODEL_VERILATOR_LIBS} ${MODEL_VERILATOR_OBJS} -L${CDL_ROOT}/lib -lcdl_se_python ${PYTHON_LIBS} -lc++ -lc ${LDFLAGS}  -L/opt/homebrew/lib -lpython3.13 -L /opt/homebrew/opt/python3/Frameworks/Python.framework/Versions/3.13/lib/
 
 endef
 
