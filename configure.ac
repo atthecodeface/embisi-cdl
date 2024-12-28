@@ -64,6 +64,7 @@ case $host_os in
     make_static_binary="\${CXX} \${CXXFLAGS} -o"
     make_static_library="libtool -static -o "
     make_dynamic_library="\${CXX} $dynamic_library_flags -o"
+    make_dynamic_library="ld $dynamic_library_flags -o"
 esac
 OS_CFLAGS="$os_cflags"
 OS_CXXFLAGS="$os_cxxflags"
