@@ -27,10 +27,12 @@
 #define SL_TIMER_x86_CLKS_PER_US (2800)
 #endif
 
-#ifdef __GNUC__
-#define SL_TIMER_CPU_CLOCKS ({unsigned long long x;unsigned int lo,hi; __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));x = (((unsigned long long)(hi))<<32) | lo;x;})
+#if defined(__x86_64__) || defined(__amd64__)
+ #define SL_TIMER_CPU_CLOCKS ({unsigned long long x;unsigned int lo,hi; __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));x = (((unsigned long long)(hi))<<32) | lo;x;})
+#elif defined(__aarch64__)
+ #define SL_TIMER_CPU_CLOCKS ({ int64_t virtual_timer_value; asm volatile("mrs %0, cntvct_el0" : "=r"(virtual_timer_value)); virtual_timer_value;})
 #else
-#define SL_TIMER_CPU_CLOCKS (0)
+ #define SL_TIMER_CPU_CLOCKS (0)
 #endif
 
 #define SL_TIMER_US_FROM_CLKS(clks) (clks/(0.0+SL_TIMER_x86_CLKS_PER_US))
