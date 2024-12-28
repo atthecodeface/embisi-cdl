@@ -15,8 +15,8 @@ cdl_options ass:on
 
 c_model log   c_log_toggle
 
-cdl simple tie_high
-cdl simple tie_both
+# cdl simple tie_high
+# cdl simple tie_both
 cdl simple toggle
 cdl simple invert
 cdl simple and

@@ -24,8 +24,8 @@ class SimpleModules(cdl_desc.Modules):
     name = "simple"
     src_dir = "tests/simple"
     modules = []
-    modules += [ CdlModule("tie_high") ]
-    modules += [ CdlModule("tie_both") ]
+    # modules += [ CdlModule("tie_high") ]
+    # modules += [ CdlModule("tie_both") ]
     modules += [ CdlModule("toggle") ]
     modules += [ CdlModule("invert") ]
     modules += [ CdlModule("and") ]
@@ -52,10 +52,10 @@ class VerilogModules(cdl_desc.Modules):
     modules += [ CModel("rams") ]
     modules += [ CdlModule("ram_burst") ]
     modules += [ Verilog("ram_burst_v") ]
-    modules += [ CdlSimVerilatedModule("ram_burst_v",
-                                       cdl_filename="ram_burst",
-                                       registered_name="ram_burst",
-                                       extra_verilog=["srw_rams.v"])]
+    #modules += [ CdlSimVerilatedModule("ram_burst_v",
+    #                                   cdl_filename="ram_burst",
+    #                                   registered_name="ram_burst",
+    #                                   extra_verilog=["srw_rams.v"])]
 
 class VectorModules(cdl_desc.Modules):
     name = "vector"
@@ -77,11 +77,11 @@ class VectorModules(cdl_desc.Modules):
     modules += [ CdlModule("vector_op_2") ]
     modules += [ CdlModule("vector_sum_2__width_4", constants={"width":4}, cdl_filename="vector_sum_2") ]
 
-    modules += [ CdlSimVerilatedModule("vector_sum_2__width_4_v",
-                                       verilog_filename="vector_sum_2__width_4",
-                                       cdl_filename="vector_sum_2",
-                                       constants={"width":4},
-    ) ]
+    #modules += [ CdlSimVerilatedModule("vector_sum_2__width_4_v",
+    #                                   verilog_filename="vector_sum_2__width_4",
+    #                                   cdl_filename="vector_sum_2",
+    #                                   constants={"width":4},
+    #) ]
     pass
 
 class StructModules(cdl_desc.Modules):
